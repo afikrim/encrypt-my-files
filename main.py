@@ -154,7 +154,7 @@ def encrypt_dir(path, key, compress):
                 # compress directory
                 compress_dir(filepath)
                 # encrypt compressed file
-                encrypt_file(filepath + ".zip", key)
+                encrypt_file(filepath + "-encrypted.zip", key)
         else:
             # define fullpath
             fullpath = p.join(path, file.name)
@@ -186,11 +186,13 @@ def decrypt_dir(path, key):
                 decrypt_file(fullpath, key)
 
     if p.isfile(path) and ext == ".zip":
-        # extracr zip
-        extract_dir(path)
-        # get dirname
-        dirname = p.splitext(path)[0]
-        return decrypt_dir(dirname, key)
+        # check is it a normal zip file or is it a encrypted zip file
+        if "-encrypted.zip" in path:
+            # extracr zip
+            extract_dir(path)
+            # get dirname
+            dirname = p.splitext(path)[0]
+            return decrypt_dir(dirname, key)
 
 
 def get_all_files(dirname):

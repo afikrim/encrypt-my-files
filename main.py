@@ -1,29 +1,34 @@
 from cryptography.fernet import Fernet
-from os import remove, scandir, path as p, listdir, chdir
+from os import remove, scandir, path as p, listdir
 from shutil import rmtree
 from zipfile import ZipFile
 
 
-def write_key():
+def write_key(key_name):
     """
     Generates a key and save it into a file
     """
     key = Fernet.generate_key()
-    with open("secret.key", "wb") as key_file:
+    with open(key_name, "wb") as key_file:
         key_file.write(key)
 
 
-def load_key():
+def load_key(key_name):
     """
-    Loads the key from the current directory named `key.key`
+    Given a key_name (str), system will generate or use that key
     """
-    return open("secret.key", "rb").read()
+    if not p.exists(key_name):
+        write_key(key_name)
+
+    return open(key_name, "rb").read()
 
 
 def encrypt(path, key, compress):
     """
-    Given a path (str) and key (bytes), it check if path is a file or a dir
+    Given a path (str) and key (str), it check if path is a file or a dir
     """
+    key = load_key(key)
+
     # check is it a directory
     if p.isdir(path):
         # encrypt a directory
@@ -40,8 +45,10 @@ def encrypt(path, key, compress):
 
 def decrypt(path, key):
     """
-    Given a path (str) and key (bytes), it check if path is a file or a dir
+    Given a path (str) and key (str), it check if path is a file or a dir
     """
+    key = load_key(key)
+
     if p.isdir(path):
         # encrypt a directory
         return decrypt_dir(path, key)
@@ -133,11 +140,11 @@ def encrypt_dir(path, key, compress):
     write with encoded name
     """
     # scan directory
-    for file in listdir(path):
+    for file in scandir(path):
         # if file is a directory
         if p.isdir(file):
             # define root
-            root = p.join(path, file)
+            root = p.join(path, file.name)
             # return this function
             encrypt_dir(root, key, compress)
             # check if user want to compress the folder
@@ -150,7 +157,7 @@ def encrypt_dir(path, key, compress):
                 encrypt_file(filepath + ".zip", key)
         else:
             # define fullpath
-            fullpath = p.join(path, file)
+            fullpath = p.join(path, file.name)
             # encrypt a file
             encrypt_file(fullpath, key)
     return
@@ -165,16 +172,16 @@ def decrypt_dir(path, key):
     ext = p.splitext(path)[-1]
     # check is it a dir or a file
     if p.isdir(path):
-        for file in listdir(path):
+        for file in scandir(path):
             # if file is a directory
             if p.isdir(file):
                 # define root
-                root = p.join(path, file)
+                root = p.join(path, file.name)
                 # return this function
                 decrypt_dir(root, key)
             else:
                 # define fullpath
-                fullpath = p.join(path, file)
+                fullpath = p.join(path, file.name)
                 # decrypt file
                 decrypt_file(fullpath, key)
 
@@ -235,9 +242,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Simple File Encryptor Script")
     parser.add_argument("path", help="Path to encrypt/decrypt")
-    parser.add_argument("-g", "--generate-key", dest="generate_key",
-                        action="store_true", help="Whether to generate"
-                        + "a new key or use existing")
+    parser.add_argument("-k", "--key-path", dest="key",
+                        help="Whether to generate a new key or use existing")
     parser.add_argument("-e", "--encrypt", action="store_true",
                         help="Whether to encrypt the file, "
                         + "only -e or -d can be specified.")
@@ -250,13 +256,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     compress = args.compress
-    generate_key = args.generate_key
+    key = args.key
     path = args.path
 
-    if generate_key:
-        write_key()
-    # load the key
-    key = load_key()
+    if key:
+        # split keyname
+        key_name, ext = p.splitext(key)
+        if ext != ".key":
+            raise TypeError("Only .key file are allow")
+    else:
+        raise TypeError("Please specify path to key file.")
 
     encrypt_ = args.encrypt
     decrypt_ = args.decrypt

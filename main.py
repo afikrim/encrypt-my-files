@@ -54,10 +54,8 @@ def decrypt(path, key):
         return decrypt_dir(path, key)
     # decrypt a file
     path = decrypt_file(path, key)
-    # get it's extension
-    ext = p.splitext(path)[-1]
-    # check is it a zip or normal file
-    if ext == ".zip":
+    # check if file contains suffix
+    if "-encrypted.zip" in path:
         return decrypt_dir(path, key)
     return
 
@@ -191,7 +189,7 @@ def decrypt_dir(path, key):
             # extracr zip
             extract_dir(path)
             # get dirname
-            dirname = p.splitext(path)[0]
+            dirname = path[0:-14]
             return decrypt_dir(dirname, key)
 
 

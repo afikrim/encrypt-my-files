@@ -38,7 +38,7 @@ def encrypt(path, key, compress):
             # compress directory
             compress_dir(path)
             # encrypt compressed file
-            encrypt_file(path + ".zip", key)
+            encrypt_file(path + "-encrypted.zip", key)
         return
     return encrypt_file(path, key)
 
@@ -211,7 +211,7 @@ def compress_dir(dirname):
     filepaths = get_all_files(dirname)
 
     # open a zip file in write mode
-    with ZipFile(dirname + ".zip", "w") as zip:
+    with ZipFile(dirname + "-encrypted.zip", "w") as zip:
         # looping all files in the directory
         for file in filepaths:
             # print all files
